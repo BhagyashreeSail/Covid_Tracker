@@ -1,29 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import {
-  FormControl,
-  Select,
+import { FormControl,
   MenuItem,
+  Select,
   Card,
-  CardContent,  
+  CardContent
 } from '@material-ui/core';
-import InfoBox from "./InfoBox";
-import Table from "./Table";
+import InfoBox from './InfoBox';
+import Map from './Map';
+import Table from './Table';
+import { sortData, prettyPrintStat} from './util';
+import "leaflet/dist/leaflet.css"
 
 function App() {
   const [countries, setCountries]=useState([]);
   const [country, setCountry]=useState('worldwide');
   const [countryInfo, setCountryInfo]=useState({});
   const [tableData, setTableData]=useState([]);
+  const [mapCenter,setMapCenter]=useState({lat:34.80746,lng:-40.4796});
+  const [mapZoom,setMapZoom]=useState(3);
+  const[mapCountries,setMapCountries]=useState([]);
+  const[caseType,setCaseType]=useState("cases");
+
 
   useEffect(() =>{ 
-    fetch("https://disease.sh/v3/covid-19/all")
-    .then(response => response.json())
-    .then((data) => {
-      setCountryInfo(data)
-    })
-    },[])
+  fetch("https://disease.sh/v3/covid-19/all")
+  .then(response => response.json())
+  .then((data) => {
+    setCountryInfo(data)
+  })
+  },[])
 
+  //State=writing variable in react
   useEffect(() =>{
     //Code inside this will execute once the app/component is loaded and also when the countries variable changes
     //async ==> send a request to server and wait for it ,do something with info
@@ -38,8 +46,10 @@ function App() {
             value:country.countryInfo.iso2 //US, IN
           }
         ));
-        
-        setTableData(data);
+
+        const sortedData= sortData(data);
+        setTableData(sortedData);
+        setMapCountries(data);
         setCountries(countries);
       });
     };
@@ -59,11 +69,19 @@ function App() {
       setCountry(CountryCode);
       setCountryInfo(data);
 
-      })
+      if(CountryCode!=='worldwide'){
+        setMapCenter([data.countryInfo.lat,data.countryInfo.long]);
+      }
+      else{
+        
+      setMapCenter([34.80746,-40.4796]);
+      }
+      setMapZoom(4);
+    })
   };
-
+  // console.log("Country info",countryInfo)
   return (
-    <div className="App">
+    <div className="app">
       <div className="app_left">
       <div className="app__header">
       <h1>COVID-19 Tracker</h1>
@@ -82,32 +100,48 @@ function App() {
 
       <div className="app__stats">
           <InfoBox
+            active={caseType==="cases"}
+            onClick={(e) => setCaseType("cases")}
+            isRed
             title="Coronavirus cases" 
-            cases={countryInfo.todayCases} 
-            total={countryInfo.cases}
+            cases={prettyPrintStat(countryInfo.todayCases)} 
+            total={prettyPrintStat(countryInfo.cases)}
             />
           <InfoBox 
+            active={caseType==="recovered"}
+            onClick={(e) => setCaseType("recovered")}
             title="Recovered" 
-            cases={countryInfo.todayRecovered} 
-            total={countryInfo.recovered}
+            cases={prettyPrintStat(countryInfo.todayRecovered)} 
+            total={prettyPrintStat(countryInfo.recovered)}
             />
-          <InfoBox
+          <InfoBox 
+            active={caseType==="deaths"}
+            onClick={(e) => setCaseType("deaths")}
+            isRed
             title="Deaths" 
-            cases={countryInfo.todayDeaths} 
-            total={countryInfo.deaths}
+            cases={prettyPrintStat(countryInfo.todayDeaths)} 
+            total={prettyPrintStat(countryInfo.deaths)}
             />
       </div>
-{/*       Map */}
+      
+      <Map 
+      caseType={caseType}
+      countries={mapCountries}
+      center={mapCenter}
+      zoom={mapZoom}
+      />
       </div>
+      
       <Card className="app__right">
         <CardContent>
           <h3>Live Cases By Country</h3>
           <Table countries={tableData}/>
-          <h3 className="app__graphTitle">WorldWide new Cases</h3>
-          {/* LineGraph */}
+          <h3 className="app__graphTitle">WorldWide new {caseType}</h3>
+          {/* Line graph */}
         </CardContent>
       </Card>
-    </div>
+
+      </div>
   );
 }
 
