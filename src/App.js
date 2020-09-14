@@ -10,6 +10,7 @@ import InfoBox from './InfoBox';
 import Map from './Map';
 import Table from './Table';
 import { sortData, prettyPrintStat} from './util';
+import LineGraph from './LineGraph';
 import "leaflet/dist/leaflet.css"
 
 function App() {
@@ -137,7 +138,7 @@ function App() {
           <h3>Live Cases By Country</h3>
           <Table countries={tableData}/>
           <h3 className="app__graphTitle">WorldWide new {caseType}</h3>
-          {/* Line graph */}
+          <LineGraph className="app__graph"caseType={caseType}/>
         </CardContent>
       </Card>
 
